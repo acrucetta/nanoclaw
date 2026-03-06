@@ -56,7 +56,10 @@ interface VolumeMount {
 }
 
 function resolveCommandPath(command: string): string | undefined {
-  const processBinCandidate = path.join(path.dirname(process.execPath), command);
+  const processBinCandidate = path.join(
+    path.dirname(process.execPath),
+    command,
+  );
   if (fs.existsSync(processBinCandidate)) {
     return processBinCandidate;
   }
