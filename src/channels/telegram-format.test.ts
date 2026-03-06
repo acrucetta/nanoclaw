@@ -4,9 +4,9 @@ import { renderTelegramHtml } from './telegram-format.js';
 
 describe('renderTelegramHtml', () => {
   it('renders bold, italic, strikethrough, and spoilers as Telegram HTML', () => {
-    expect(
-      renderTelegramHtml('**bold** *italic* ~~gone~~ ||secret||'),
-    ).toBe('<b>bold</b> <i>italic</i> <s>gone</s> <tg-spoiler>secret</tg-spoiler>');
+    expect(renderTelegramHtml('**bold** *italic* ~~gone~~ ||secret||')).toBe(
+      '<b>bold</b> <i>italic</i> <s>gone</s> <tg-spoiler>secret</tg-spoiler>',
+    );
   });
 
   it('renders headings and blockquotes with supported HTML tags', () => {
