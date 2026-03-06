@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { EventEmitter } from 'events';
 import { PassThrough } from 'stream';
+import fs from 'fs';
+import * as childProcess from 'child_process';
 
 // Sentinel markers must match container-runner.ts
 const OUTPUT_START_MARKER = '---NANOCLAW_OUTPUT_START---';
@@ -76,6 +78,7 @@ vi.mock('child_process', async () => {
   return {
     ...actual,
     spawn: vi.fn(() => fakeProc),
+    spawnSync: vi.fn(() => ({ status: 1, stdout: '' })),
     exec: vi.fn(
       (_cmd: string, _opts: unknown, cb?: (err: Error | null) => void) => {
         if (cb) cb(null);
@@ -114,6 +117,7 @@ describe('container-runner timeout behavior', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     fakeProc = createFakeProcess();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -205,5 +209,42 @@ describe('container-runner timeout behavior', () => {
     const result = await resultPromise;
     expect(result.status).toBe('success');
     expect(result.newSessionId).toBe('session-456');
+  });
+
+  it('mounts gws from the node bin directory before PATH lookup', async () => {
+    const originalExecPath = process.execPath;
+    try {
+      Object.defineProperty(process, 'execPath', {
+        value: '/tmp/nvm/bin/node',
+        configurable: true,
+      });
+
+      vi.mocked(fs.existsSync).mockImplementation((target) => {
+        if (target === '/tmp/nvm/bin/gws') return true;
+        return false;
+      });
+
+      const resultPromise = runContainerAgent(
+        testGroup,
+        testInput,
+        () => {},
+        async () => {},
+      );
+
+      const spawnCalls = vi.mocked(childProcess.spawn).mock.calls;
+      expect(spawnCalls).toHaveLength(1);
+      expect(spawnCalls[0]?.[1]).toContain(
+        '/tmp/nvm/bin/gws:/home/node/bin/gws:ro',
+      );
+      expect(vi.mocked(childProcess.spawnSync)).not.toHaveBeenCalled();
+
+      fakeProc.emit('close', 0);
+      await resultPromise;
+    } finally {
+      Object.defineProperty(process, 'execPath', {
+        value: originalExecPath,
+        configurable: true,
+      });
+    }
   });
 });
