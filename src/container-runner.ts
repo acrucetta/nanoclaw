@@ -64,7 +64,11 @@ function resolveCommandPath(command: string): string | undefined {
   }
 
   const resolvedPath = (result.stdout || '').trim().split('\n').pop()?.trim();
-  if (!resolvedPath || !path.isAbsolute(resolvedPath) || !fs.existsSync(resolvedPath)) {
+  if (
+    !resolvedPath ||
+    !path.isAbsolute(resolvedPath) ||
+    !fs.existsSync(resolvedPath)
+  ) {
     return undefined;
   }
 
