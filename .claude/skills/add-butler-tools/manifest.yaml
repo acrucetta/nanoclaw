@@ -1,0 +1,21 @@
+skill: butler-tools
+version: 1.0.0
+description: "Import MCP-backed Butler tools into NanoClaw"
+core_version: 0.1.0
+adds: []
+modifies:
+  - src/container-runner.ts
+  - container/agent-runner/src/index.ts
+structured:
+  npm_dependencies: {}
+  env_additions:
+    - BRAVE_API_KEY
+    - WHOOP_CLIENT_ID
+    - WHOOP_CLIENT_SECRET
+    - WHOOP_REDIRECT_URI
+    - WHOOP_SCOPES
+    - ACCESS_TOKEN
+    - YNAB_API_TOKEN
+conflicts: []
+depends: []
+test: "npm run build"

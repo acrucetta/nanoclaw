@@ -4,7 +4,6 @@
  */
 import { ChildProcess, exec, spawn } from 'child_process';
 import fs from 'fs';
-import os from 'os';
 import path from 'path';
 
 import {
@@ -162,25 +161,6 @@ function buildVolumeMounts(
     readonly: false,
   });
 
-  const homeDir = os.homedir();
-  const gogConfigDir = path.join(homeDir, '.config', 'gogcli');
-  if (fs.existsSync(gogConfigDir)) {
-    mounts.push({
-      hostPath: gogConfigDir,
-      containerPath: '/home/node/.config/gogcli',
-      readonly: false,
-    });
-  }
-
-  const gogBinaryPath = path.join(homeDir, 'go', 'bin', 'gog');
-  if (fs.existsSync(gogBinaryPath)) {
-    mounts.push({
-      hostPath: gogBinaryPath,
-      containerPath: '/home/node/bin/gog',
-      readonly: true,
-    });
-  }
-
   // Per-group IPC namespace: each group gets its own IPC directory
   // This prevents cross-group privilege escalation via IPC
   const groupIpcDir = resolveGroupIpcPath(group.folder);
@@ -240,8 +220,13 @@ function readSecrets(): Record<string, string> {
     'ANTHROPIC_API_KEY',
     'ANTHROPIC_BASE_URL',
     'ANTHROPIC_AUTH_TOKEN',
-    'GOG_ACCOUNT',
-    'GOG_KEYRING_PASSWORD',
+    'BRAVE_API_KEY',
+    'WHOOP_CLIENT_ID',
+    'WHOOP_CLIENT_SECRET',
+    'WHOOP_REDIRECT_URI',
+    'WHOOP_SCOPES',
+    'ACCESS_TOKEN',
+    'YNAB_API_TOKEN',
   ]);
 }
 

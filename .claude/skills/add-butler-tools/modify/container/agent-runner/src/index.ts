@@ -137,13 +137,7 @@ function createPreCompactHook(assistantName?: string): HookCallback {
 // Secrets to strip from Bash tool subprocess environments.
 // These are needed by claude-code for API auth but should never
 // be visible to commands Kit runs.
-const SECRET_ENV_VARS = [
-  'ANTHROPIC_API_KEY',
-  'ANTHROPIC_AUTH_TOKEN',
-  'CLAUDE_CODE_OAUTH_TOKEN',
-  'GOG_KEYRING_PASSWORD',
-  'OPENROUTER_API_KEY',
-];
+const SECRET_ENV_VARS = ['ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN'];
 
 function createSanitizeBashHook(): HookCallback {
   return async (input, _toolUseId, _context) => {
@@ -294,15 +288,17 @@ async function runQuery(
           'TeamCreate', 'TeamDelete', 'SendMessage',
           'TodoWrite', 'ToolSearch', 'Skill',
           'NotebookEdit',
-          'mcp__nanoclaw__*',
+          'mcp__nanoclaw__*'
         ];
 
-        if (
-          sdkEnv.GOG_KEYRING_PASSWORD &&
-          fs.existsSync('/home/node/bin/gog') &&
-          fs.existsSync('/home/node/.config/gogcli')
-        ) {
-          tools.push('mcp__gog__*');
+        if (sdkEnv.BRAVE_API_KEY) tools.push('mcp__brave-search__*');
+        if (sdkEnv.WHOOP_CLIENT_ID && sdkEnv.WHOOP_CLIENT_SECRET && sdkEnv.WHOOP_REDIRECT_URI) {
+          tools.push('mcp__whoop__*');
+        }
+        if (sdkEnv.ACCESS_TOKEN) tools.push('mcp__readwise__*');
+        if (sdkEnv.YNAB_API_TOKEN) tools.push('mcp__ynab__*');
+        if (fs.existsSync('/workspace/extra/obsidian-vault')) {
+          tools.push('mcp__obsidian__*');
         }
 
         return tools;
@@ -324,19 +320,61 @@ async function runQuery(
           },
         };
 
-        if (
-          sdkEnv.GOG_KEYRING_PASSWORD &&
-          fs.existsSync('/home/node/bin/gog') &&
-          fs.existsSync('/home/node/.config/gogcli')
-        ) {
-          servers.gog = {
-            command: 'node',
-            args: [path.join(path.dirname(mcpServerPath), 'gog-mcp-stdio.js')],
+        if (sdkEnv.BRAVE_API_KEY) {
+          servers['brave-search'] = {
+            command: 'npx',
+            args: ['-y', '@modelcontextprotocol/server-brave-search'],
             env: {
-              GOG_BIN: '/home/node/bin/gog',
-              GOG_ACCOUNT: sdkEnv.GOG_ACCOUNT,
-              GOG_KEYRING_PASSWORD: sdkEnv.GOG_KEYRING_PASSWORD,
+              BRAVE_API_KEY: sdkEnv.BRAVE_API_KEY,
             },
+          };
+        }
+
+        if (
+          sdkEnv.WHOOP_CLIENT_ID &&
+          sdkEnv.WHOOP_CLIENT_SECRET &&
+          sdkEnv.WHOOP_REDIRECT_URI
+        ) {
+          servers.whoop = {
+            command: 'npx',
+            args: ['-y', '@alacore/whoop-mcp-server'],
+            env: {
+              WHOOP_CLIENT_ID: sdkEnv.WHOOP_CLIENT_ID,
+              WHOOP_CLIENT_SECRET: sdkEnv.WHOOP_CLIENT_SECRET,
+              WHOOP_REDIRECT_URI: sdkEnv.WHOOP_REDIRECT_URI,
+              WHOOP_SCOPES: sdkEnv.WHOOP_SCOPES,
+            },
+          };
+        }
+
+        if (sdkEnv.ACCESS_TOKEN) {
+          servers.readwise = {
+            command: 'npx',
+            args: ['-y', '@readwise/readwise-mcp'],
+            env: {
+              ACCESS_TOKEN: sdkEnv.ACCESS_TOKEN,
+            },
+          };
+        }
+
+        if (sdkEnv.YNAB_API_TOKEN) {
+          servers.ynab = {
+            command: 'npx',
+            args: ['-y', 'ynab-mcp-server'],
+            env: {
+              YNAB_API_TOKEN: sdkEnv.YNAB_API_TOKEN,
+            },
+          };
+        }
+
+        if (fs.existsSync('/workspace/extra/obsidian-vault')) {
+          servers.obsidian = {
+            command: 'npx',
+            args: [
+              '-y',
+              '@mauricio.wolff/mcp-obsidian@latest',
+              '/workspace/extra/obsidian-vault',
+            ],
           };
         }
 
