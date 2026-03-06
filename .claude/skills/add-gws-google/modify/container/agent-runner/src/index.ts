@@ -254,9 +254,10 @@ async function runQuery(
   let resultCount = 0;
   let hadTextResult = false;
   const gwsConfigDir = '/home/node/.config/gws';
+  const gwsRunScript = '/home/node/lib/google-workspace-cli/run-gws.js';
   const gwsCredentialsPath = path.join(gwsConfigDir, 'credentials.json');
   const hasGoogleWorkspace =
-    fs.existsSync('/home/node/bin/gws') &&
+    fs.existsSync(gwsRunScript) &&
     (fs.existsSync(gwsCredentialsPath) ||
       Boolean(sdkEnv.GOOGLE_WORKSPACE_CLI_TOKEN));
 
@@ -329,8 +330,8 @@ async function runQuery(
 
         if (hasGoogleWorkspace) {
           servers.google_workspace = {
-            command: '/home/node/bin/gws',
-            args: ['mcp', '-s', 'gmail,calendar'],
+            command: 'node',
+            args: [gwsRunScript, 'mcp', '-s', 'gmail,calendar'],
             env: {
               GOOGLE_WORKSPACE_CLI_CONFIG_DIR: gwsConfigDir,
               ...(fs.existsSync(gwsCredentialsPath)

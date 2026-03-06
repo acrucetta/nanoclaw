@@ -37,6 +37,7 @@ vi.mock('fs', async () => {
     default: {
       ...actual,
       existsSync: vi.fn(() => false),
+      realpathSync: vi.fn((target) => target),
       mkdirSync: vi.fn(),
       writeFileSync: vi.fn(),
       readFileSync: vi.fn(() => ''),
@@ -221,8 +222,21 @@ describe('container-runner timeout behavior', () => {
 
       vi.mocked(fs.existsSync).mockImplementation((target) => {
         if (target === '/tmp/nvm/bin/gws') return true;
+        if (
+          target === '/tmp/nvm/lib/node_modules/@googleworkspace/cli/run-gws.js'
+        ) {
+          return true;
+        }
+        if (
+          target === '/tmp/nvm/lib/node_modules/@googleworkspace/cli/binary.js'
+        ) {
+          return true;
+        }
         return false;
       });
+      vi.mocked(fs.realpathSync).mockReturnValue(
+        '/tmp/nvm/lib/node_modules/@googleworkspace/cli/run-gws.js' as never,
+      );
 
       const resultPromise = runContainerAgent(
         testGroup,
@@ -234,7 +248,7 @@ describe('container-runner timeout behavior', () => {
       const spawnCalls = vi.mocked(childProcess.spawn).mock.calls;
       expect(spawnCalls).toHaveLength(1);
       expect(spawnCalls[0]?.[1]).toContain(
-        '/tmp/nvm/bin/gws:/home/node/bin/gws:ro',
+        '/tmp/nvm/lib/node_modules/@googleworkspace/cli:/home/node/lib/google-workspace-cli:ro',
       );
       expect(vi.mocked(childProcess.spawnSync)).not.toHaveBeenCalled();
 

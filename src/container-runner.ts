@@ -83,6 +83,30 @@ function resolveCommandPath(command: string): string | undefined {
   return resolvedPath;
 }
 
+function resolveGwsPackageDir(): string | undefined {
+  const gwsCommandPath = resolveCommandPath('gws');
+  if (!gwsCommandPath) {
+    return undefined;
+  }
+
+  let resolvedLauncherPath = gwsCommandPath;
+  try {
+    resolvedLauncherPath = fs.realpathSync(gwsCommandPath);
+  } catch {
+    // Fall back to the unresolved command path if the runtime does not expose
+    // a symlink target. This still supports direct script installs.
+  }
+
+  const packageDir = path.dirname(resolvedLauncherPath);
+  const runScript = path.join(packageDir, 'run-gws.js');
+  const binaryModule = path.join(packageDir, 'binary.js');
+  if (!fs.existsSync(runScript) || !fs.existsSync(binaryModule)) {
+    return undefined;
+  }
+
+  return packageDir;
+}
+
 function buildVolumeMounts(
   group: RegisteredGroup,
   isMain: boolean,
@@ -200,11 +224,11 @@ function buildVolumeMounts(
     });
   }
 
-  const gwsBinaryPath = resolveCommandPath('gws');
-  if (gwsBinaryPath) {
+  const gwsPackageDir = resolveGwsPackageDir();
+  if (gwsPackageDir) {
     mounts.push({
-      hostPath: gwsBinaryPath,
-      containerPath: '/home/node/bin/gws',
+      hostPath: gwsPackageDir,
+      containerPath: '/home/node/lib/google-workspace-cli',
       readonly: true,
     });
   }
