@@ -105,6 +105,17 @@ async function main(): Promise<void> {
     );
   }
 
+  const enabledGoogleSkills = enabledSkillIds.filter((skillId) =>
+    ['gmail', 'google-calendar', 'amazon-purchases'].includes(skillId),
+  );
+  if (enabledGoogleSkills.length > 0) {
+    await ensureSkillApplied(
+      'gog-google',
+      path.join(args.nanoclawRoot, GOG_GOOGLE_SKILL_DIR),
+      summary,
+    );
+  }
+
   summarizeNonSkillMappings(enabledSkillIds, summary);
 
   const importedEnv = buildImportedEnv(
@@ -765,13 +776,3 @@ main().catch((err) => {
   console.error(err instanceof Error ? err.message : String(err));
   process.exit(1);
 });
-  const enabledGoogleSkills = enabledSkillIds.filter((skillId) =>
-    ['gmail', 'google-calendar', 'amazon-purchases'].includes(skillId),
-  );
-  if (enabledGoogleSkills.length > 0) {
-    await ensureSkillApplied(
-      'gog-google',
-      path.join(args.nanoclawRoot, GOG_GOOGLE_SKILL_DIR),
-      summary,
-    );
-  }
