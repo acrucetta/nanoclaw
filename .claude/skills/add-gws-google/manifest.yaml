@@ -1,0 +1,11 @@
+skill: gws-google
+version: 1.0.0
+description: "Google Gmail and Calendar access via Google Workspace CLI MCP"
+core_version: 1.2.6
+adds:
+  - container/skills/google-workspace/SKILL.md
+modifies:
+  - src/container-runner.ts
+  - container/agent-runner/src/index.ts
+conflicts: []
+depends: []

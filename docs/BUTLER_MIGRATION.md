@@ -16,7 +16,7 @@ The migration follows NanoClaw's normal model:
 - `brave-search`, `whoop`, `readwise`, `ynab`, `obsidian` -> NanoClaw's
   repo-local `add-butler-tools` skill
 - `gmail`, `google-calendar`, `amazon-purchases` -> NanoClaw's repo-local
-  `add-gog-google` skill over Butler's existing `gog` CLI workflow
+  `add-gws-google` skill over Google Workspace CLI's native MCP server
 - `orchestrator` -> NanoClaw's native scheduler/task model, not a ported
   subsystem
 
@@ -45,11 +45,18 @@ npx tsx scripts/import-butler-config.ts \
 
 - no generic external MCP loader in NanoClaw core
 - no copied Butler skill runtime under `data/imported-skills`
-- no direct Windows `gog.exe` dependency inside NanoClaw containers
+- no custom Google wrapper protocol inside NanoClaw containers
 
 ## Current Caveat
 
-The imported `gog` path expects a working Linux `gog` install plus readable
-Google auth state under `~/.config/gogcli`. If Butler's old token store cannot
-be decrypted after migration, re-run `gog auth login` on the SSH host to
-refresh the Linux-side credentials.
+The imported Google path expects a working host `gws` install plus container-
+readable credentials under `~/.config/gws/credentials.json`. The simplest
+setup on the SSH host is:
+
+```bash
+gws auth login
+gws auth export --unmasked > ~/.config/gws/credentials.json
+```
+
+NanoClaw mounts `~/.config/gws` into the agent container and runs
+`gws mcp -s gmail,calendar` directly.

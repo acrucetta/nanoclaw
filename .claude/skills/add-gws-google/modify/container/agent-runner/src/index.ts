@@ -141,7 +141,8 @@ const SECRET_ENV_VARS = [
   'ANTHROPIC_API_KEY',
   'ANTHROPIC_AUTH_TOKEN',
   'CLAUDE_CODE_OAUTH_TOKEN',
-  'GOG_KEYRING_PASSWORD',
+  'GOOGLE_WORKSPACE_CLI_CLIENT_SECRET',
+  'GOOGLE_WORKSPACE_CLI_TOKEN',
   'OPENROUTER_API_KEY',
 ];
 
@@ -252,6 +253,12 @@ async function runQuery(
   let messageCount = 0;
   let resultCount = 0;
   let hadTextResult = false;
+  const gwsConfigDir = '/home/node/.config/gws';
+  const gwsCredentialsPath = path.join(gwsConfigDir, 'credentials.json');
+  const hasGoogleWorkspace =
+    fs.existsSync('/home/node/bin/gws') &&
+    (fs.existsSync(gwsCredentialsPath) ||
+      Boolean(sdkEnv.GOOGLE_WORKSPACE_CLI_TOKEN));
 
   // Load global CLAUDE.md as additional system context (shared across all groups)
   const globalClaudeMdPath = '/workspace/global/CLAUDE.md';
@@ -297,12 +304,8 @@ async function runQuery(
           'mcp__nanoclaw__*',
         ];
 
-        if (
-          sdkEnv.GOG_KEYRING_PASSWORD &&
-          fs.existsSync('/home/node/bin/gog') &&
-          fs.existsSync('/home/node/.config/gogcli')
-        ) {
-          tools.push('mcp__gog__*');
+        if (hasGoogleWorkspace) {
+          tools.push('mcp__google_workspace__*');
         }
 
         return tools;
@@ -324,18 +327,41 @@ async function runQuery(
           },
         };
 
-        if (
-          sdkEnv.GOG_KEYRING_PASSWORD &&
-          fs.existsSync('/home/node/bin/gog') &&
-          fs.existsSync('/home/node/.config/gogcli')
-        ) {
-          servers.gog = {
-            command: 'node',
-            args: [path.join(path.dirname(mcpServerPath), 'gog-mcp-stdio.js')],
+        if (hasGoogleWorkspace) {
+          servers.google_workspace = {
+            command: '/home/node/bin/gws',
+            args: ['mcp', '-s', 'gmail,calendar'],
             env: {
-              GOG_BIN: '/home/node/bin/gog',
-              GOG_ACCOUNT: sdkEnv.GOG_ACCOUNT,
-              GOG_KEYRING_PASSWORD: sdkEnv.GOG_KEYRING_PASSWORD,
+              GOOGLE_WORKSPACE_CLI_CONFIG_DIR: gwsConfigDir,
+              ...(fs.existsSync(gwsCredentialsPath)
+                ? {
+                    GOOGLE_WORKSPACE_CLI_CREDENTIALS_FILE: gwsCredentialsPath,
+                  }
+                : {}),
+              ...(sdkEnv.GOOGLE_WORKSPACE_CLI_CLIENT_ID
+                ? {
+                    GOOGLE_WORKSPACE_CLI_CLIENT_ID:
+                      sdkEnv.GOOGLE_WORKSPACE_CLI_CLIENT_ID,
+                  }
+                : {}),
+              ...(sdkEnv.GOOGLE_WORKSPACE_CLI_CLIENT_SECRET
+                ? {
+                    GOOGLE_WORKSPACE_CLI_CLIENT_SECRET:
+                      sdkEnv.GOOGLE_WORKSPACE_CLI_CLIENT_SECRET,
+                  }
+                : {}),
+              ...(sdkEnv.GOOGLE_WORKSPACE_CLI_TOKEN
+                ? {
+                    GOOGLE_WORKSPACE_CLI_TOKEN:
+                      sdkEnv.GOOGLE_WORKSPACE_CLI_TOKEN,
+                  }
+                : {}),
+              ...(sdkEnv.GOOGLE_WORKSPACE_PROJECT_ID
+                ? {
+                    GOOGLE_WORKSPACE_PROJECT_ID:
+                      sdkEnv.GOOGLE_WORKSPACE_PROJECT_ID,
+                  }
+                : {}),
             },
           };
         }

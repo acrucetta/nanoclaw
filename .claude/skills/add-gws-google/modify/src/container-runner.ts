@@ -2,7 +2,7 @@
  * Container Runner for NanoClaw
  * Spawns agent execution in containers and handles IPC
  */
-import { ChildProcess, exec, spawn } from 'child_process';
+import { ChildProcess, exec, spawn, spawnSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -53,6 +53,22 @@ interface VolumeMount {
   hostPath: string;
   containerPath: string;
   readonly: boolean;
+}
+
+function resolveCommandPath(command: string): string | undefined {
+  const result = spawnSync('/bin/sh', ['-lc', `command -v ${command}`], {
+    encoding: 'utf-8',
+  });
+  if (result.status !== 0) {
+    return undefined;
+  }
+
+  const resolvedPath = (result.stdout || '').trim().split('\n').pop()?.trim();
+  if (!resolvedPath || !path.isAbsolute(resolvedPath) || !fs.existsSync(resolvedPath)) {
+    return undefined;
+  }
+
+  return resolvedPath;
 }
 
 function buildVolumeMounts(
@@ -163,20 +179,20 @@ function buildVolumeMounts(
   });
 
   const homeDir = os.homedir();
-  const gogConfigDir = path.join(homeDir, '.config', 'gogcli');
-  if (fs.existsSync(gogConfigDir)) {
+  const gwsConfigDir = path.join(homeDir, '.config', 'gws');
+  if (fs.existsSync(gwsConfigDir)) {
     mounts.push({
-      hostPath: gogConfigDir,
-      containerPath: '/home/node/.config/gogcli',
+      hostPath: gwsConfigDir,
+      containerPath: '/home/node/.config/gws',
       readonly: false,
     });
   }
 
-  const gogBinaryPath = path.join(homeDir, 'go', 'bin', 'gog');
-  if (fs.existsSync(gogBinaryPath)) {
+  const gwsBinaryPath = resolveCommandPath('gws');
+  if (gwsBinaryPath) {
     mounts.push({
-      hostPath: gogBinaryPath,
-      containerPath: '/home/node/bin/gog',
+      hostPath: gwsBinaryPath,
+      containerPath: '/home/node/bin/gws',
       readonly: true,
     });
   }
@@ -240,8 +256,10 @@ function readSecrets(): Record<string, string> {
     'ANTHROPIC_API_KEY',
     'ANTHROPIC_BASE_URL',
     'ANTHROPIC_AUTH_TOKEN',
-    'GOG_ACCOUNT',
-    'GOG_KEYRING_PASSWORD',
+    'GOOGLE_WORKSPACE_CLI_CLIENT_ID',
+    'GOOGLE_WORKSPACE_CLI_CLIENT_SECRET',
+    'GOOGLE_WORKSPACE_CLI_TOKEN',
+    'GOOGLE_WORKSPACE_PROJECT_ID',
   ]);
 }
 

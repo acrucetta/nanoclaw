@@ -46,7 +46,7 @@ const MEMORY_SECTION_START = '<!-- BEGIN imported-butler-memory -->';
 const MEMORY_SECTION_END = '<!-- END imported-butler-memory -->';
 const TELEGRAM_SKILL_DIR = '.claude/skills/add-telegram';
 const BUTLER_TOOLS_SKILL_DIR = '.claude/skills/add-butler-tools';
-const GOG_GOOGLE_SKILL_DIR = '.claude/skills/add-gog-google';
+const GWS_GOOGLE_SKILL_DIR = '.claude/skills/add-gws-google';
 const TOOL_SKILLS = new Set([
   'brave-search',
   'whoop',
@@ -110,8 +110,8 @@ async function main(): Promise<void> {
   );
   if (enabledGoogleSkills.length > 0) {
     await ensureSkillApplied(
-      'gog-google',
-      path.join(args.nanoclawRoot, GOG_GOOGLE_SKILL_DIR),
+      'gws-google',
+      path.join(args.nanoclawRoot, GWS_GOOGLE_SKILL_DIR),
       summary,
     );
   }
@@ -123,8 +123,10 @@ async function main(): Promise<void> {
     manifests,
     [
       ...(butlerEnv.TELEGRAM_BOT_TOKEN ? ['TELEGRAM_BOT_TOKEN'] : []),
-      'GOG_ACCOUNT',
-      'GOG_KEYRING_PASSWORD',
+      'GOOGLE_WORKSPACE_CLI_CLIENT_ID',
+      'GOOGLE_WORKSPACE_CLI_CLIENT_SECRET',
+      'GOOGLE_WORKSPACE_CLI_TOKEN',
+      'GOOGLE_WORKSPACE_PROJECT_ID',
     ],
   );
   summary.importedEnvKeys = Object.keys(importedEnv).sort();
@@ -505,11 +507,11 @@ function writeClaudeToolSection(
         case 'obsidian':
           return '- Obsidian via MCP when the vault is mounted at `/workspace/extra/obsidian-vault`';
         case 'gmail':
-          return '- Gmail search via the host `gog` CLI when `GOG_KEYRING_PASSWORD` is configured';
+          return '- Gmail access via the host `gws` CLI when Google Workspace auth is configured';
         case 'google-calendar':
-          return '- Google Calendar via the host `gog` CLI when `GOG_KEYRING_PASSWORD` is configured';
+          return '- Google Calendar access via the host `gws` CLI when Google Workspace auth is configured';
         case 'amazon-purchases':
-          return '- Amazon purchase lookups via Gmail search patterns over the host `gog` CLI';
+          return '- Amazon purchase lookups via Gmail search patterns over the host `gws` CLI';
         default:
           return `- ${skillId}`;
       }

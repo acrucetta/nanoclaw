@@ -14,7 +14,7 @@ What it adds:
 - YNAB MCP
 - Obsidian MCP
 
-It does not add Butler's `gog`-based Gmail or Google Calendar flows. Those should be migrated separately with the repo-local `add-gog-google` skill.
+It does not add Butler's Google Gmail or Calendar flows. Those should be migrated separately with the repo-local `add-gws-google` skill.
 
 ## Phase 1: Apply
 
